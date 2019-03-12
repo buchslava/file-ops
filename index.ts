@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as fse from 'fs-extra';
 import * as net from 'net';
 import * as path from 'path';
+import * as events from 'events';
 import * as urlLib from 'url';
 import * as gitclient from 'git-fetch-pack';
 import * as transport from 'git-transport-protocol';
@@ -19,17 +20,35 @@ const isWin = /^win32/.test(os.platform());
 
 (async function () {
   const tagVersion = await getLatestGithubTag(`github.com/${dsGithubOwner}/${dsGithubRepo}`);
+  const destDir = path.resolve('target');
+  const em = new events.EventEmitter();
+
+  em.on('ds-update-status', (status: string) => {
+    console.log(status);
+  });
+
+  try {
+    await updateDataset(tagVersion, destDir, em);
+    console.log('ok');
+  } catch (e) {
+    console.log(e);
+  }
+})();
+
+async function updateDataset(tagVersion: string, destDir: string, em: events.EventEmitter) {
   const dsFeedUrl = dsFeedUrlTemp.replace('#version#', tagVersion);
   const tempPath = path.resolve('temp');
   await removeDir(tempPath);
+  em.emit('ds-update-status', 'Downloading dataset archive...');
   const dlFile = await download({ url: dsFeedUrl, path: tempPath, file: 'dl.zip' });
   const unpackFun = isWin ? unpackWin : unpackNix;
+  em.emit('ds-update-status', 'Unpacking dataset archive...');
   const unpacked = await unpackFun({ fullPath: dlFile, target: path.resolve(tempPath, 'unpacked') });
   const contentDir = await getFirstDir(unpacked);
-  const destDir = path.resolve('target');
+  em.emit('ds-update-status', 'Updating existing dataset...');
   await copy(contentDir, destDir);
   await removeDir(tempPath);
-})();
+}
 
 async function copy(source: string, dest: string): Promise<void> {
   return new Promise((resolve: Function, reject: Function) => {
@@ -101,7 +120,7 @@ async function removeDir(what: string): Promise<void> {
   });
 }
 
-async function unpackWin(options): Promise<string> {
+async function unpackWin(options: {fullPath: string, target: string}): Promise<string> {
   const unzipper = new DecompressZip(options.fullPath);
   const targetPath = path.resolve(options.target);
 
@@ -132,7 +151,7 @@ async function unpackNix(options): Promise<string> {
   });
 };
 
-async function download(options): Promise<string> {
+async function download(options: {url: string, path: string, file: string}): Promise<string> {
   return new Promise((resolve: Function, reject: Function) => {
     const TIMEOUT = 240000;
     const mode = parseInt('0777', 8) & (~process.umask());
