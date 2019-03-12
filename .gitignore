@@ -4,6 +4,7 @@
 *.js.map
 *.d.ts
 temp
+target/**/*
 
 # Logs
 *.log*
