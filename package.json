@@ -1,0 +1,27 @@
+{
+  "name": "777",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "tsc": "tsc",
+    "start": "npm run tsc && node ./index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^11.11.1",
+    "typescript": "3.2.2"
+  },
+  "dependencies": {
+    "decompress-zip": "^0.2.2",
+    "extract-zip": "^1.6.7",
+    "follow-redirects": "^1.7.0",
+    "fs-extra": "^7.0.1",
+    "git-fetch-pack": "^0.1.1",
+    "git-transport-protocol": "^0.1.0",
+    "request": "^2.88.0",
+    "semver-sort": "0.0.4"
+  }
+}
